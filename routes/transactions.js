@@ -34,8 +34,13 @@ const processTransaction = async (requestBody, res) => {
             return
         }
 
+        let sequelize = models.sequelize;
+
+        //get transaction object
+        t = await sequelize.transaction();
+
         //fetch from account
-        let fromAccount = await models.Balance.findOne({where: {account_nr: requestBody.from}});
+        let fromAccount = await models.Balance.findOne({where: {account_nr: requestBody.from}}, {transaction: t});
 
         //check if fromAccount exists
         if (!fromAccount) {
@@ -47,7 +52,7 @@ const processTransaction = async (requestBody, res) => {
         }
 
         //fetch toAccount
-        let toAccount = await models.Balance.findOne({where: {account_nr: requestBody.to}});
+        let toAccount = await models.Balance.findOne({where: {account_nr: requestBody.to}},{transaction: t});
         //does it exist
         if (!toAccount) {
             return res.status(400).send({error: "Invalid to account: " + requestBody.to + " supplied"});
@@ -57,10 +62,7 @@ const processTransaction = async (requestBody, res) => {
             return res.status(400).send({error: "From and to accounts cannot be the same"})
         }
 
-        let sequelize = models.sequelize;
 
-        //get transaction object
-        t = await sequelize.transaction();
 
         //debit from account
         let response = await fromAccount.updateAttributes({
