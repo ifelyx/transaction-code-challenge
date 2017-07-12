@@ -26,7 +26,7 @@ const processTransaction = async (requestBody, res) => {
     let t = null;
     try {
         //ensure this request is not a duplicate transaction posted within 20 seconds
-        let cacheKey = "key_" + requestBody.from + requestBody.to + requestBody.amount;
+        let cacheKey = "key_"+requestBody.from+requestBody.to+requestBody.amount;
         let cachedBody = mcache.get(cacheKey)
         if (cachedBody) {
             res.status(409).send({error: "Duplicate transaction request"});
@@ -52,15 +52,16 @@ const processTransaction = async (requestBody, res) => {
         }
 
         //fetch toAccount
-        let toAccount = await models.Balance.findOne({where: {account_nr: requestBody.to}}, {transaction: t});
+        let toAccount = await models.Balance.findOne({where: {account_nr: requestBody.to}},{transaction: t});
         //does it exist
         if (!toAccount) {
             return res.status(400).send({error: "Invalid to account: " + requestBody.to + " supplied"});
         }
 
-        if (toAccount.account_nr === fromAccount.account_nr) {
+        if(toAccount.account_nr === fromAccount.account_nr){
             return res.status(400).send({error: "From and to accounts cannot be the same"})
         }
+
 
 
         //debit from account
@@ -105,13 +106,14 @@ const processTransaction = async (requestBody, res) => {
 
     } catch (err) {
         console.log(err);
-        if (t) {
+        if (t != null) {
             t.rollback();
         }
         return res.status(500).send({error: "Transaction failed due to server error"});
     }
 
 }
+
 
 
 module.exports = router;
